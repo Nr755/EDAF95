@@ -1,0 +1,89 @@
+**Prep:** 
+
+Step 1: The Glorious Glasgow Haskell Compilation System, version 9.4.8
+
+Step 2: 
+1 : [1,2,3]
+[1,1,2,3]
+
+: (read “cons”) is the list-construction operator. 
+It takes a single element on the left and a list on the right, and returns a new list with that element prepended.
+
+(:) 1 [1,2,3]
+[1,1,2,3]
+
+This is the same operation as above, except we’re calling the infix operator : in prefix form, i.e., (:) 1 [1,2,3].
+Haskell allows using infix operators like : and (++) in a prefix manner by enclosing them in parentheses.
+
+[’a’, ’b’] ++ [’c’, ’d’]
+<interactive>:4:2: error: lexical error at character 'a'
+
+This snippet shows an error caused by using “curly quotes” (’a’, ’b’) instead of straight ASCII quotes ('a', 'b').
+Correct: 
+['a', 'b'] ++ ['c', 'd']
+"abcd"
+
+map (2+) [1, 2, 3, 4]
+[3,4,5,6]
+
+map applies a function to each element of a list.
+(2+) is a partially applied function that adds 2 to its argument.
+
+:t map
+map :: (a -> b) -> [a] -> [b]
+
+:t (:)
+(:) :: a -> [a] -> [a]
+
+:t (++)
+(++) :: [a] -> [a] -> [a]
+
+:t map (2+)
+map (2+) :: Num b => [b] -> [b]
+
+: (“cons”) prepends an element to a list.
+(++) concatenates two lists.
+map applies a function to each element in a list.
+
+
+Step 3:
+:load Sudoku
+[1 of 1] Compiling Sudoku           ( Sudoku.hs, interpreted )
+Ok, one module loaded.
+
+containsElem 1 [1,2,3], containsElem ’a’ "cde"
+<interactive>:2:23: error: parse error on input ‘,’
+# Jag är dum, trodde det var en enda stor
+
+containsElem 1 [1,2,3]
+True
+
+containsElem ’a’ "cde"
+<interactive>:5:14: error: lexical error at character 'a'
+
+containsElem 'a' "cde"
+False
+
+containsElem () [()]
+True
+
+containsElem :: Eq a => a -> [a] -> Bool
+<interactive>:7:1: error:
+    • No instance for (Show (() -> [()] -> Bool))
+        arising from a use of ‘print’
+        (maybe you haven't applied a function to enough arguments?)
+    • In a stmt of an interactive GHCi command: print it
+
+In Haskell, Eq is the typeclass for types whose values can be compared for equality using (==) and (/=).
+The type variable a is generic, meaning containsElem can work on any type, as long as it implements Eq.
+
+
+For each x in the first list, and for each y in the second list, produce [x, y].
+cross :: [a] -> [a] -> [[a]]
+cross xs ys = [[x, y] | x <- xs, y <- ys]
+
+
+
+Task 1:
+replacePointsWithZeros :: String -> String
+replacePointsWithZeros = map (\c -> if c == '.' then '0' else c)
