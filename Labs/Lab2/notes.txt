@@ -1,0 +1,216 @@
+**Prep:**
+
+Task 1:
+rowUnits, colUnits :: [[String]]
+rowUnits = [cross [r] cols | r <- rows]
+colUnits = [cross rows [c] | c <- cols]
+
+boxRows, boxCols :: [String]
+boxRows = ["AB", "CD"] -- two groups of row letters
+boxCols = ["12", "34"] -- two groups of column digits
+
+boxUnits :: [[String]]
+boxUnits =
+  [ [[r, c] | r <- rs, c <- cs] -- produce squares like "A1","A2","B1","B2"
+    | rs <- boxRows,
+      cs <- boxCols
+  ]
+
+unitList :: [[String]]
+unitList = rowUnits ++ colUnits ++ boxUnits
+
+Task 2:
+filterUnitList :: String -> [[String]]
+filterUnitList sq = filter (containsElem sq) unitList
+
+Task 3:
+units :: [(String, [[String]])]
+units = [(sq, filterUnitList sq) | sq <- squares4]
+
+Task 4:
+foldList :: [[a]] -> [a]
+foldList = concat
+
+Task 5:
+removeDuplicates :: (Eq a) => [a] -> [a]
+removeDuplicates [] = []
+removeDuplicates (x : xs) =
+  x : removeDuplicates (filter (/= x) xs)
+
+Task 6:
+peers :: [(String, [String])]
+peers =
+  [ ( sq,
+      filter (/= sq) -- remove the square
+        . removeDuplicates -- remove duplicates
+        . concat -- flatten the 3 units
+        $ allUnits
+    )
+    | (sq, allUnits) <- units
+  ]
+
+**Part 1:**
+
+Task 1:
+hlint Sudoku.hs 
+No hints
+
+Added 
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use isDigit" #-}
+
+To ignore isDigit in own implemented method.
+
+Removed: containsElem, foldList and Data.Char
+
+Added/Fixed: elem, concat and myDigitToInt
+
+hlint gives no hints, and it compiles without errors.
+
+**Part 2:**
+
+Task 1:
+(From Prelude docs:)
+lookup :: Eq a => a -> [(a, b)] -> Maybe b 
+
+lookup key assocs looks up a key in an association list. For the result to be Nothing, the list must be finite.
+
+Looks at key-pair, if k exists, print only v.
+
+Examples
+
+>>> lookup 2 []
+Nothing
+>>> lookup 2 [(1, "first")]
+Nothing
+>>> lookup 2 [(1, "first"), (2, "second"), (3, "third")]
+Just "second"
+
+Task 2:
+fromMaybe :: a -> Maybe a -> a
+fromMaybe defaultVal Nothing  = defaultVal
+fromMaybe _         (Just x) = x
+
+If the second argument is Just x, return x.
+If the second argument is Nothing, return the default value defaultVal.
+
+Task 3:
+getPeers :: String -> [String]
+getPeers sq = fromMaybe [] (lookup sq peers)
+
+lookup sq peers searches for sq among the association list peers (which has type [(String, [String])]), returning a Maybe [String].
+If lookup finds a matching entry, it returns Just [String]; otherwise it returns Nothing.
+fromMaybe [] will extract the list from Just ..., or return [] (the empty list) if it’s Nothing.
+
+Task 4:
+justifyList :: [Maybe a] -> [a]
+justifyList xs = [ x | Just x <- xs ]
+
+The pattern [ x | Just x <- xs ] instructs Haskell to pick out elements that match Just x and bind them to x.
+Any element of xs that is Nothing doesn’t match and is dropped from the result.
+
+Task 5:
+lookups :: Eq a => [a] -> [(a, b)] -> [b]
+lookups xs pairs = justifyList (map (`lookup` pairs) xs)
+
+map (\x -> lookup x pairs) xs: For each element x in xs, apply lookup x pairs, producing a [Maybe b].
+justifyList: Filters out all the Nothing values and extracts the b from each Just b, returning [b].
+So any elements in xs that aren’t found in the association list pairs will yield Nothing and be discarded.
+
+**Part 3:**
+
+Task 1:
+validSquare :: (String, Int) -> [(String, Int)] -> Bool
+validSquare (square, value) board
+  | value == 0 = True -- empty square => treat as valid for now
+  | otherwise =
+      let peerValues = lookups (getPeers square) board -- all peer values
+       in notElem value peerValues
+
+Task 2:
+validBoard :: [(String, Int)] -> Bool
+validBoard board = all (`validSquare` board) board
+
+Task 3:
+verifySudoku :: Sudoku -> Bool
+verifySudoku sudokuStr =
+  let board = parseBoard sudokuStr
+   in validBoard board
+
+Task 4:
+"1234341243212143" - Good
+"1134341243212143" - Bad
+
+ghci> verifySudoku "1234341243212143"
+True
+ghci> verifySudoku "1134341243212143"
+False
+
+
+**Part 4:**
+
+Task 1:
+reduceList :: (Eq a) => [a] -> [a] -> [a]
+reduceList xs ys = filter (`notElem` ys) xs
+
+Task 2:
+
+validSquareNumbers ::
+  (String, Int) ->
+  [(String, Int)] ->
+  (String, [Int])
+validSquareNumbers (sq, val) board
+  -- Case 1: The square is already filled (val /= 0)
+  | val /= 0 =
+      let peerValues = lookups (getPeers sq) board
+       in if val `notElem` peerValues
+            then (sq, [val])
+            else (sq, [])
+  -- Case 2: The square is empty (val == 0)
+  | otherwise =
+      let peerValues = lookups (getPeers sq) board
+          allDigits = [1 .. 4]
+          validDigits = [d | d <- allDigits, d `notElem` peerValues]
+       in (sq, validDigits)
+
+Task 3:
+validBoardNumbers :: [(String, Int)] -> [(String, [Int])]
+validBoardNumbers board = map (\sq -> validSquareNumbers sq board) board
+
+validSquareNumbers takes a single square (String, Int) plus the entire board and returns (String, [Int]).
+validBoardNumbers applies validSquareNumbers to each square in the board, producing a list of 
+(squareID, possibleValues) pairs for the entire board.
+
+Task 4:
+validUnit :: [String]               -- e.g. ["A1","A2","B1","B2"]
+          -> [(String, [Int])]     -- board mapped to possible values
+          -> Bool
+validUnit unit boardNumbers =
+  singletonsOk && fillAllDigitsOk
+  where
+    squaresPoss = lookups unit boardNumbers
+      -- E.g. if unit = ["A1","A2"], squaresPoss might be [ [1], [1,4] ]
+
+    -- 1 Collect singletons, i.e. any [v] with exactly one possibility:
+    singletons = [ v | [v] <- squaresPoss ]
+      -- Pattern `[v]` matches a list with exactly one element.
+
+    -- Check no duplicates among singletons:
+    singletonsOk =
+      length (removeDuplicates singletons) == length singletons
+
+    -- 2 Ensure every digit 1..4 can appear in at least one square in this unit
+    fillAllDigitsOk =
+      all (\d -> any (d `elem`) squaresPoss) [1..4]
+
+Task 5:
+validUnits :: [(String, [Int])] -> Bool
+validUnits boardNumbers =
+  all (\u -> validUnit u boardNumbers) unitList
+
+Task 6:
+verifySudoku :: Sudoku -> Bool
+verifySudoku sudoku =
+  let board         = parseBoard sudoku         -- [(String, Int)]
+      boardNumbers  = validBoardNumbers board   -- [(String, [Int])]
+  in  validBoard board && validUnits boardNumbers
