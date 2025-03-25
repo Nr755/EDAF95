@@ -1,6 +1,6 @@
 module Main where
 
-import Sudoku -- import your Sudoku module
+import Sudoku
 
 main :: IO ()
 main = do
