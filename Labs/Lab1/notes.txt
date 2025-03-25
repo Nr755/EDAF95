@@ -82,8 +82,73 @@ For each x in the first list, and for each y in the second list, produce [x, y].
 cross :: [a] -> [a] -> [[a]]
 cross xs ys = [[x, y] | x <- xs, y <- ys]
 
-
+**Part 1:**
 
 Task 1:
 replacePointsWithZeros :: String -> String
 replacePointsWithZeros = map (\c -> if c == '.' then '0' else c)
+
+Task 2:
+rows9 = "ABCDEFGHI"
+cols9 = "123456789"
+
+cross :: [Char] -> [Char] -> [String]
+cross rs cs = [[r, c] | r <- rs, c <- cs]
+
+Task 3:
+parseBoard :: String -> [(String, Int)]
+parseBoard board =
+  let zeros = replacePointsWithZeros board
+      digits = map digitToInt zeros
+   in zip squares4 digits
+
+**Part 2:**
+
+Task 1:
+rowUnits, colUnits :: [[String]]
+rowUnits = [cross [r] cols | r <- rows]
+colUnits = [cross rows [c] | c <- cols]
+
+boxRows, boxCols :: [String]
+boxRows = ["AB", "CD"] -- two groups of row letters
+boxCols = ["12", "34"] -- two groups of column digits
+
+boxUnits :: [[String]]
+boxUnits =
+  [ [[r, c] | r <- rs, c <- cs] -- produce squares like "A1","A2","B1","B2"
+    | rs <- boxRows,
+      cs <- boxCols
+  ]
+
+unitList :: [[String]]
+unitList = rowUnits ++ colUnits ++ boxUnits
+
+Task 2:
+filterUnitList :: String -> [[String]]
+filterUnitList sq = filter (containsElem sq) unitList
+
+Task 3:
+units :: [(String, [[String]])]
+units = [(sq, filterUnitList sq) | sq <- squares4]
+
+Task 4:
+foldList :: [[a]] -> [a]
+foldList = concat
+
+Task 5:
+removeDuplicates :: (Eq a) => [a] -> [a]
+removeDuplicates [] = []
+removeDuplicates (x : xs) =
+  x : removeDuplicates (filter (/= x) xs)
+
+Task 6:
+peers :: [(String, [String])]
+peers =
+  [ ( sq,
+      filter (/= sq) -- remove the square
+        . removeDuplicates -- remove duplicates
+        . concat -- flatten the 3 units
+        $ allUnits
+    )
+    | (sq, allUnits) <- units
+  ]
