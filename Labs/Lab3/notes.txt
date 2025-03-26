@@ -1,0 +1,104 @@
+**Prep:**
+
+Task 1:
+giveMeANumber :: IO ()
+giveMeANumber = do
+  putStrLn "Enter the lower bound:"
+  lowerStr <- getLine
+  putStrLn "Enter the upper bound:"
+  upperStr <- getLine
+
+  -- Parse input as Int
+  let lower = read lowerStr :: Int
+      upper = read upperStr :: Int
+
+  -- Generate a random Int between lower and upper (inclusive)
+  randomNum <- randomRIO (lower, upper)
+
+  putStrLn $ "Your random number is: " ++ show randomNum
+
+Task 2:
+interact :: (String -> String) -> IO ()
+
+interact reads all of standard input (as a single String), applies a pure function (String -> String) to transform that input,
+and then writes the result to standard output.
+
+example:
+main :: IO ()
+main = interact reverse
+
+Takes whatever you type (until EOF), reverses the entire input, and then prints it out.
+
+Task 3:
+printSudoku :: [(String, Int)] -> IO ()
+printSudoku board = do
+  -- Optional column header
+  putStrLn "    1 2 3 4"
+  -- For each row A..D
+  mapM_
+    ( \r -> do
+        -- Gather the four squares of that row, e.g. A1,A2,A3,A4
+        let rowValues = [lookup [r, c] board | c <- "1234"]
+            -- Convert Maybe Int to either "." or the digit as a string
+            showCell mb = case mb of
+              Just 0 -> "."
+              Just n -> show n
+              Nothing -> "." -- if the board doesn't list a square at all
+            rowString = unwords (map showCell rowValues)
+        putStrLn (r : " | " ++ rowString)
+    )
+    "ABCD"
+
+lookup [r,c] board finds the value of the square “r,c” (e.g. "A1") in the board. If it’s not present, you get Nothing.
+If the square’s value is 0, we print ".". Otherwise, we convert the integer to a string with show n.
+mapM_ iterates over each character in "ABCD", building and printing one row at a time.
+
+
+**Lab:**
+
+Task 1:
+printSudoku :: [(String, Int)] -> IO ()
+printSudoku board = do
+  -- Optional column header
+  putStrLn "    1 2 3 4"
+  -- For each row A..D
+  mapM_
+    ( \r -> do
+        -- Gather the four squares of that row, e.g. A1,A2,A3,A4
+        let rowValues = [lookup [r, c] board | c <- "1234"]
+            -- Convert Maybe Int to either "." or the digit as a string
+            showCell mb = case mb of
+              Just 0 -> "."
+              Just n -> show n
+              Nothing -> "." -- if the board doesn't list a square at all
+            rowString = unwords (map showCell rowValues)
+        putStrLn (r : " | " ++ rowString)
+    )
+    "ABCD"
+
+main :: IO ()
+main = do
+  let testBoard =
+        [ ("A1", 1),
+          ("A2", 2),
+          ("A3", 3),
+          ("A4", 4),
+          ("B1", 2),
+          ("B2", 0),
+          ("B3", 0),
+          ("B4", 4),
+          ("C1", 0),
+          ("C2", 0),
+          ("C3", 3),
+          ("C4", 1),
+          ("D1", 4),
+          ("D2", 3),
+          ("D3", 0),
+          ("D4", 0)
+        ]
+  putStrLn "Printing test Sudoku board:"
+  printSudoku testBoard
+
+
+Task 2:
+Done in CheckSudoku.hs
