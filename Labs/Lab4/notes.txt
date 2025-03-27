@@ -1,0 +1,88 @@
+**Prep:**
+
+Task 1:
+map2 :: (a -> c, b -> d) -> (a, b) -> (c, d)
+map2 (f, g) (x, y) = (f x, g y)
+
+map2 applies two different functions (f and g) to a pair (x, y).
+
+Task 2:
+mapIf :: (a -> a) -> (a -> Bool) -> [a] -> [a]
+mapIf f p = map (\x -> if p x then f x else x)
+
+mapIf applies a function f only to elements that satisfy predicate p.
+
+Task 3:
+maybeOr :: Maybe a -> Maybe a -> Maybe a
+maybeOr (Just x) _ = Just x
+maybeOr Nothing y  = y
+
+maybeOr returns the first Just value if it exists, otherwise it returns the second argument.
+
+Task 4:
+firstJust :: [Maybe a] -> Maybe a
+firstJust = foldr maybeOr Nothing
+
+firstJust finds the first non-Nothing value in a list of Maybe values.
+
+Task 5:
+lookupList :: (Eq a) => a -> [(a, [b])] -> [b]
+lookupList key xs = maybe [] id (lookup key xs)
+
+lookup key xs returns a Maybe [b] (either Just [b] if found, or Nothing).
+maybe [] id (lookup key xs):
+If lookup key xs returns Nothing, it uses the default value [].
+If it returns Just lst, it applies id (which just returns lst as-is).
+
+**Part 1:**
+
+Task 1:
+maybeBind :: Maybe a -> (a -> Maybe b) -> Maybe b
+maybeBind Nothing _ = Nothing
+maybeBind (Just x) f = f x
+
+If the first argument is Nothing, the function should return Nothing immediately (indicating failure).
+Otherwise, if we have Just x, we extract the value x and apply function f to it.
+Since f itself returns a Maybe b, we stay inside the Maybe context.
+
+Task 2:
+tryReplace :: Eq a => a -> a -> [a] -> Maybe [a]
+tryReplace _ _ [] = Nothing
+tryReplace y y’ (x:xs)
+  | x == y = Just (y’:xs)
+  | otherwise = fmap (x:) $ tryReplace y y’ xs
+
+It that attempts to replace the first occurrence of an element in a list with a new element. 
+If the element is found, it returns Just the modified list. If the element is not found, it returns Nothing.
+
+Task 3:
+-- maybeBind: If the Maybe value is Just, apply the function; otherwise, return Nothing
+maybeBind :: Maybe a -> (a -> Maybe b) -> Maybe b
+maybeBind Nothing _ = Nothing
+maybeBind (Just x) f = f x
+
+-- Try replacing elements from ys with corresponding zs in xs
+recursiveReplacement :: Eq a => [a] -> [a] -> [a] -> Maybe [a]
+recursiveReplacement xs [] [] = Just xs  -- Base case: No more replacements
+recursiveReplacement xs (y:ys) (z:zs) =
+  tryReplace y z xs `maybeBind` (\newXs -> recursiveReplacement newXs ys zs)
+recursiveReplacement _ _ _ = Nothing  -- If the lists are of different lengths, return Nothing
+
+maybeBind:
+If given Nothing, return Nothing immediately.
+If given Just x, apply the function to x.
+
+recursiveReplacement:
+Base case: If no replacements are left (ys and zs are empty), return Just xs (the modified list).
+Recursive case:
+Apply tryReplace on the first pair (y, z).
+If successful (Just newXs), recurse with newXs and the remaining replacements.
+If tryReplace fails, return Nothing.
+
+**Part 2:**
+
+Task 1:
+setValue :: Int -> String -> Board -> Board
+setValue value square board =
+  mapIf (\(s, _) -> s == square) (\(_, _) -> (square, [value])) board
+
