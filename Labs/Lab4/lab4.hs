@@ -63,3 +63,32 @@ recursiveReplacement _ _ _ = Nothing -- If the lists are of different lengths, r
 -- If tryReplace fails, return Nothing.
 
 type Board = [(String, [Int])] -- Each square has a name (e.g., "A1") and a list of possible values.
+
+setValue :: Int -> String -> Board -> Board
+setValue value square =
+  mapIf (map2 (id, const [value])) (\(s, _) -> s == square)
+
+-- Assign only the given value to the square, overriding any existing possibilities.
+
+eliminateValue :: Int -> String -> Board -> Board
+eliminateValue value square =
+  mapIf (map2 (id, filter (/= value))) (\(s, vs) -> s == square && value `elem` vs)
+
+--  Remove value from the list of possibilities if it exists.
+
+eliminate :: Int -> String -> Board -> Maybe Board
+eliminate value square board
+  | square `notElem` map fst board = Just board -- Square not in board, return unchanged
+  | value `notElem` lookupList square board = Just board -- Value already eliminated, return unchanged
+  | null newValues = Nothing -- No possible values left (unsolvable state)
+  | length newValues == 1 = Just (setValue (head newValues) square board) -- Only one value left, fix it
+  | otherwise = Just newBoard -- Successfully eliminated the value
+  where
+    newBoard = eliminateValue value square board -- Attempt elimination
+    newValues = lookupList square newBoard -- Check remaining possible values
+
+-- If square is not in the board, return Just board (no changes needed).
+-- If value is not in lookupList square board, return Just board (no changes needed).
+-- If eliminating the value leaves an empty list (null newValues), return Nothing.
+-- If exactly one value remains, fix it using setValue.
+-- Otherwise, if successfully eliminated the value, return Just newBoard.
