@@ -96,3 +96,70 @@ eliminateValue value square =
 
 Remove value from the list of possibilities if it exists.
 
+Task 2:
+Implemented `eliminate`, which attempts to remove a value from a square’s list of possible values.
+
+eliminate :: Int -> String -> Board -> Maybe Board
+eliminate value square board
+  | square `notElem` map fst board = Just board
+  | value `notElem` lookupList square board = Just board
+  | null newValues = Nothing
+  | length newValues == 1 = Just (setValue (head newValues) square board)
+  | otherwise = Just newBoard
+  where
+    newBoard = eliminateValue value square board
+    newValues = lookupList square newBoard
+
+It covers three important cases:
+  (1) If the value is already eliminated → do nothing, return the board.
+  (2) If removing the value leaves no possible options → return `Nothing` (unsolvable).
+  (3) If exactly one value remains after elimination → set that value using `setValue`.
+Used guards and `where` to clearly handle these cases.
+
+Task 3:
+Implemented `assign`, which sets a value in a square and then propagates the elimination
+
+assign :: Int -> String -> Board -> Maybe Board
+assign value square board =
+  Just (setValue value square board)
+    `maybeBind` assign' value (getPeers square)
+
+assign' :: Int -> [String] -> Board -> Maybe Board
+assign' _ [] board = Just board
+assign' value (p : ps) board =
+  eliminate value p board `maybeBind` assign' value ps
+
+Step 1: Use setValue to fix value at square.
+Step 2: Recursively eliminate value from all peers of square using assign'.
+2. assign' (Recursive Helper)
+
+Base Case: If no more peers left, return Just board.
+Recursive Case: Use eliminate value p board to remove value from p, then recursively apply assign' to remaining peers.
+3. maybeBind
+
+If any elimination fails (returns Nothing), the whole function fails.
+If elimination succeeds, continue processing peers.
+
+Task 4:
+Implemented `parseBoard`, which converts a string-based Sudoku puzzle
+into an internal `Board` representation, handling fixed values and blanks.
+
+parseBoard :: String -> Maybe Board
+parseBoard = foldr ((=<<) . parseSquare) (Just emptyBoard) . zip squares
+
+Each character is matched with its corresponding square using `zip`.
+The `assign` function is used for fixed digits to immediately apply constraint propagation.
+This ensures the parsed board is already partially solved (if possible) and valid.
+
+parseSquare :: (String, Char) -> Board -> Maybe Board
+Tries to apply a digit to a square via assign.
+(=<<) . parseSquare
+This turns parseSquare into a function that:
+Accepts a pair (square, char)
+And applies it to a Maybe Board in the fold chain.
+So it behaves like:
+
+\(squareChar) mb -> mb >>= parseSquare squareChar
+foldr threads the board through each parsed character:
+If any assignment fails, it returns Nothing.
+If all succeed, it returns Just Board.
