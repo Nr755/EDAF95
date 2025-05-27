@@ -4,7 +4,7 @@
 --
 -- Instructions to run:
 -- 1. Place this file in the same folder as the test files (easy50.txt, or your own test files).
--- 2. Load the file in GHCi:   ghci SolveSudoku.hs
+-- 2. Load the file in GHCi:   ghci Assignment.hs
 -- 3. Run:                     main
 --
 -- Program description:
@@ -183,7 +183,14 @@ readSudokusFromFile = do
   hFlush stdout
   filename <- getLine
   contents <- readFile filename
-  return (lines contents)
+  let puzzleLines = filter (\l -> l /= "" && l /= "========") (lines contents)
+      grouped = groupEvery 9 puzzleLines
+      puzzles = map concat grouped
+  return puzzles
+
+groupEvery :: Int -> [a] -> [[a]]
+groupEvery _ [] = []
+groupEvery n xs = take n xs : groupEvery n (drop n xs)
 
 -------------------------------------------------------------------------------
 -- Main Menu and REPL
